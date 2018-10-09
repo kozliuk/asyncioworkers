@@ -2,6 +2,8 @@
 easy way to create workers in asyncio
 ```python3
 import asyncio
+import random
+
 import asyncioworkers
 
 
@@ -13,13 +15,17 @@ async def coro(index):
 
 
 async def producer(w):
-    for i in range(30):
-        await w.run_coro(coro(i))
-    await asyncio.sleep(3)
+    tasks = []
+    for i in range(1000):
+        task = await w.run_coro(coro(i),
+                                priority=random.randint(asyncioworkers.CRITICAL_PRIORITY, asyncioworkers.LOW_PRIORITY))
+        tasks.append(task)
+    for task in asyncio.as_completed(tasks):
+        await task
 
 
 async def _main():
-    workers = asyncioworkers.Workers()
+    workers = asyncioworkers.Workers(100)
     await workers.start()
     await producer(workers)
     await workers.stop()

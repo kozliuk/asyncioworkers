@@ -15,8 +15,8 @@ class Workers:
             self.coro = coro
             self.__event = asyncio.Event(loop=loop)
             self.__task = None
-            self._result = None
-            self._exception = None
+            self.__result = None
+            self.__exception = None
             self.__in_cancel = None
 
         async def do(self):
@@ -25,11 +25,11 @@ class Workers:
                 if self.__in_cancel is not None:
                     raise asyncio.CancelledError()
                 self.__task = asyncio.get_event_loop().create_task(self.coro)
-                self._result = await self.__task
+                self.__result = await self.__task
             except asyncio.CancelledError as err:
                 if self.__in_cancel is None:
                     raise err
-                self._exception = err
+                self.__exception = err
             finally:
                 self.__event.set()
 
@@ -38,9 +38,9 @@ class Workers:
 
         async def _result(self):
             await self._wait()
-            if self._exception is not None:
-                raise self._exception
-            return self._result
+            if self.__exception is not None:
+                raise self.__exception
+            return self.__result
 
         async def cancel(self):
             self.__in_cancel = True
@@ -53,7 +53,7 @@ class Workers:
         def __await__(self):
             return self._result().__await__()
 
-    def __init__(self, number=30):
+    def __init__(self, number=3):
         self.__number = number
         self.__q = asyncio.PriorityQueue()
         self.__workers = []
@@ -72,7 +72,7 @@ class Workers:
             _, _task = await self.__q.get()
             await _task.do()
 
-    async def run_coro(self, coro, priority=MEDIUM_PRIORITY):
+    async def run_coro(self, coro, *, priority=MEDIUM_PRIORITY):
         _task = Workers.Task(coro)
         await self.__q.put((priority, _task))
         return _task
