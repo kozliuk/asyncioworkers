@@ -31,7 +31,7 @@ class Workers:
         async def _wait(self):
             await self.__event.wait()
 
-        async def result(self):
+        async def _result(self):
             await self._wait()
             if self._exception is not None:
                 raise self._exception
@@ -43,7 +43,7 @@ class Workers:
                 self.__task.cancel()
 
         def __await__(self):
-            return self.result().__await__()
+            return self._result().__await__()
 
     def __init__(self, number=3):
         self.__number = number
@@ -57,6 +57,7 @@ class Workers:
     async def stop(self):
         for w in self.__workers:
             w.cancel()
+        await asyncio.wait(self.__workers)
 
     async def worker(self, index):
         while True:
