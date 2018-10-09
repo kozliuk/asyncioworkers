@@ -1,5 +1,10 @@
 import asyncio
 
+LOW_PRIORITY = 3
+MEDIUM_PRIORITY = 2
+HIGH_PRIORITY = 1
+CRITICAL_PRIORITY = 0
+
 
 class Workers:
 
@@ -42,12 +47,15 @@ class Workers:
             if self.__task:
                 self.__task.cancel()
 
+        def __lt__(self, other):
+            return False
+
         def __await__(self):
             return self._result().__await__()
 
-    def __init__(self, number=3):
+    def __init__(self, number=30):
         self.__number = number
-        self.__q = asyncio.Queue()
+        self.__q = asyncio.PriorityQueue()
         self.__workers = []
 
     async def start(self):
@@ -61,12 +69,12 @@ class Workers:
 
     async def worker(self, index):
         while True:
-            _task = await self.__q.get()
+            _, _task = await self.__q.get()
             await _task.do()
 
-    async def run_coro(self, coro):
+    async def run_coro(self, coro, priority=MEDIUM_PRIORITY):
         _task = Workers.Task(coro)
-        await self.__q.put(_task)
+        await self.__q.put((priority, _task))
         return _task
 
 
