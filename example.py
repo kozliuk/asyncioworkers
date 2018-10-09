@@ -14,8 +14,11 @@ async def coro(index):
 async def producer(w):
     tasks = []
     for i in range(1000):
-        task = await w.run_coro(coro(i),
-                                priority=random.randint(asyncioworkers.CRITICAL_PRIORITY, asyncioworkers.LOW_PRIORITY))
+        task = await w.run_coro(
+            coro(i),
+            priority=random.randint(asyncioworkers.CRITICAL_PRIORITY,
+                                    asyncioworkers.LOW_PRIORITY)
+            )
         tasks.append(task)
     for task in asyncio.as_completed(tasks):
         await task

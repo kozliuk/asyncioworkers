@@ -30,6 +30,8 @@ class Workers:
                 if self.__in_cancel is None:
                     raise err
                 self.__exception = err
+            except Exception as err:
+                self.__exception = err
             finally:
                 self.__event.set()
 
